@@ -9,12 +9,16 @@ from cobra.flux_analysis import (
 from cobra.flux_analysis import production_envelope
 from cobra.test import create_test_model
 from cobra.flux_analysis import sample
-
+from cobra import Reaction, Metabolite, Model
+from cobra.flux_analysis.loopless import add_loopless, loopless_solution
+from cobra.flux_analysis import pfba
+from cobra.flux_analysis import gapfill
 
 import cobra
 import cobra.test
 import os
 import pandas
+import cobra.test
 
 def capitulo_1():
     file = open("resultados_capitulo_1.txt","w") 
@@ -294,11 +298,126 @@ def capitulo_7():
     achr.validate(np.atleast_2d(bad))
     achr.validate(s1)
     counts = [np.mean(s.Biomass_Ecoli_core > 0.1) for s in optgp.batch(100, 10)]
-    file.write("Usually {:.2f}% +- {:.2f}% grow...".format(np.mean(counts) * 100.0, np.std(counts) * 100.0))
+    file.write("Usually {:.2f}% +- {:.2f}% grow...".format(np.mean(counts) * 100.0, np.std(counts) * 100.0)); file.write("\n")
     co = model.problem.Constraint(model.reactions.Biomass_Ecoli_core.flux_expression, lb=0.1)
     model.add_cons_vars([co])
     s = sample(model, 10)
-    file.write(s.Biomass_Ecoli_core)
+    file.write(s.Biomass_Ecoli_core); file.write("\n")
+    file.close()
+
+def capitulo_8():
+    file = open("resultados_capitulo_8.txt","w")
+    salmonella = cobra.test.create_test_model('salmonella')
+    nominal = salmonella.optimize()
+    loopless = loopless_solution(salmonella)
+    import pandas
+    df = pandas.DataFrame(dict(loopless=loopless.fluxes, nominal=nominal.fluxes))
+    df.plot.scatter(x='loopless', y='nominal')
+    model = Model()
+    model.add_metabolites([Metabolite(i) for i in "ABC"])
+    model.add_reactions([Reaction(i) for i in ["EX_A", "DM_C", "v1", "v2", "v3"]])
+    model.reactions.EX_A.add_metabolites({"A": 1})
+    model.reactions.DM_C.add_metabolites({"C": -1})
+    model.reactions.v1.add_metabolites({"A": -1, "B": 1})
+    model.reactions.v2.add_metabolites({"B": -1, "C": 1})
+    model.reactions.v3.add_metabolites({"C": -1, "A": 1})
+    model.objective = 'DM_C'
+    with model:
+        add_loopless(model)
+        solution = model.optimize()
+    file.write("loopless solution: status = " + solution.status); file.write("\n")
+    file.write("loopless solution flux: v3 = %.1f" % solution.fluxes["v3"]); file.write("\n")
+    solution = pfba(model)
+    file.write("parsimonious solution: status = " + solution.status); file.write("\n")
+    file.write("loopless solution flux: v3 = %.1f" % solution.fluxes["v3"]); file.write("\n")
+    model.reactions.v3.lower_bound = 1
+    with model:
+        add_loopless(model)
+        try:
+            solution = model.optimize()
+        except:
+            file.write('model is infeasible'); file.write("\n")
+    solution = pfba(model)
+    file.write("parsimonious solution: status = " + solution.status); file.write("\n")
+    file.write("loopless solution flux: v3 = %.1f" % solution.fluxes["v3"]); file.write("\n")
+    file.close()
+
+def capitulo_9():
+    file = open("resultados_capitulo_9.txt","w")
+    model = cobra.test.create_test_model("salmonella")
+    universal = cobra.Model("universal_reactions")
+    for i in [i.id for i in model.metabolites.f6p_c.reactions]:
+        reaction = model.reactions.get_by_id(i)
+        universal.add_reaction(reaction.copy())
+        model.remove_reactions([reaction])
+    model.optimize().objective_value
+    solution = gapfill(model, universal, demand_reactions=False)
+    for reaction in solution[0]:
+         file.write(reaction.id)
+    result = gapfill(model, universal, demand_reactions=False, iterations=4)
+    for i, entries in enumerate(result):
+        file.write("---- Run %d ----" % (i + 1))
+        for e in entries:
+            file.write(e.id)
+    with model:
+        model.objective = model.add_boundary(model.metabolites.f6p_c, type='demand')
+        solution = gapfill(model, universal)
+        for reaction in solution[0]:
+             file.write(reaction.id)
+    file.close()
+
+def capitulo_10():
+    file = open("resultados_capitulo_10.txt","w")
+    model = cobra.test.create_test_model('textbook')
+    model.solver = 'glpk'
+    model.solver = 'cplex'
+    file.write(str(type(model.solver)))
+    file.close()
+
+def capitulo_11():
+    file = open("resultados_capitulo_11.txt","w")
+    model = cobra.test.create_test_model('textbook')
+    same_flux = model.problem.Constraint(
+        model.reactions.FBA.flux_expression - model.reactions.NH4t.flux_expression,
+        lb=0,
+        ub=0)
+    model.add_cons_vars(same_flux)
+    model.reactions.FBA.flux_expression
+    solution = model.optimize()
+    file.write(str(solution.fluxes['FBA']) + str(solution.fluxes['NH4t']) + str(solution.objective_value))
+    model = cobra.test.create_test_model('textbook')
+    with model:
+        model.objective = {model.reactions.Biomass_Ecoli_core: 1}
+        model.optimize()
+        file.write(str(model.reactions.Biomass_Ecoli_core.flux))
+    model.objective.expression
+    model.solver = 'cplex'
+    sum_two = model.problem.Constraint(
+        model.reactions.FBA.flux_expression + model.reactions.NH4t.flux_expression,
+        lb=2,
+        ub=2)
+    model.add_cons_vars(sum_two)
+    quadratic_objective = model.problem.Objective(
+        0.5 * model.reactions.NH4t.flux_expression**2 + 0.5 *
+        model.reactions.FBA.flux_expression**2 -
+        model.reactions.FBA.flux_expression,
+        direction='min')
+    model.objective = quadratic_objective
+    solution = model.optimize(objective_sense=None)
+    file.write(str(solution.fluxes['NH4t']) + str(solution.fluxes['FBA']))
+    model = cobra.test.create_test_model('textbook')
+    difference = model.problem.Variable('difference')
+    constraint = model.problem.Constraint(
+        model.reactions.EX_glc__D_e.flux_expression -
+        model.reactions.EX_nh4_e.flux_expression - difference,
+        lb=0,
+        ub=0)
+    model.add_cons_vars([difference, constraint])
+    for reaction in model.reactions[:5]:
+        with model:
+            reaction.knock_out()
+            model.optimize()
+    file.write(model.solver.variables.difference.primal)
     file.close()
 
 
@@ -317,4 +436,12 @@ if __name__ == '__main__':
     print("---------Calculando resultados capitulo 6---------")
     #capitulo_6()
     print("---------Calculando resultados capitulo 7---------")
-    capitulo_7()
+    #capitulo_7()
+    print("---------Calculando resultados capitulo 8---------")
+    #capitulo_8()
+    print("---------Calculando resultados capitulo 9---------")
+    #capitulo_9()
+    print("---------Calculando resultados capitulo 10---------")
+    #capitulo_10()
+    print("---------Calculando resultados capitulo 11---------")
+    capitulo_11()
