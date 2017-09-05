@@ -6,6 +6,10 @@ from time import time
 from cobra.flux_analysis import (
     single_gene_deletion, single_reaction_deletion, double_gene_deletion,
     double_reaction_deletion)
+from cobra.flux_analysis import production_envelope
+from cobra.test import create_test_model
+from cobra.flux_analysis import sample
+
 
 import cobra
 import cobra.test
@@ -260,6 +264,43 @@ def capitulo_5():
 
     file.close()
 
+def capitulo_6():
+    model = cobra.test.create_test_model("textbook")
+    prod_env = production_envelope(model, ["EX_glc__D_e", "EX_o2_e"])
+    prod_env.head()
+    prod_env = production_envelope(
+        model, ["EX_o2_e"], objective="EX_ac_e", c_source="EX_glc__D_e")
+    prod_env.head()
+    prod_env[prod_env.direction == 'maximum'].plot(
+        kind='line', x='EX_o2_e', y='carbon_yield')
+
+def capitulo_7():
+    file = open("resultados_capitulo_7.txt","w")
+    model = create_test_model("textbook")
+    s = sample(model, 100)
+    s.head()
+    print("One process:")
+    s = sample(model, 1000)
+    print("Two processes:")
+    s = sample(model, 1000, processes=2)
+    s = sample(model, 100, method="achr")
+    from cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler
+    achr = ACHRSampler(model, thinning=10)
+    optgp = OptGPSampler(model, processes=4)
+    s1 = achr.sample(100)
+    s2 = optgp.sample(100)
+    import numpy as np
+    bad = np.random.uniform(-1000, 1000, size=len(model.reactions))
+    achr.validate(np.atleast_2d(bad))
+    achr.validate(s1)
+    counts = [np.mean(s.Biomass_Ecoli_core > 0.1) for s in optgp.batch(100, 10)]
+    file.write("Usually {:.2f}% +- {:.2f}% grow...".format(np.mean(counts) * 100.0, np.std(counts) * 100.0))
+    co = model.problem.Constraint(model.reactions.Biomass_Ecoli_core.flux_expression, lb=0.1)
+    model.add_cons_vars([co])
+    s = sample(model, 10)
+    file.write(s.Biomass_Ecoli_core)
+    file.close()
+
 
 
 if __name__ == '__main__':
@@ -272,4 +313,8 @@ if __name__ == '__main__':
     print("---------Calculando resultados capitulo 4---------")
     #capitulo_4()
     print("---------Calculando resultados capitulo 5---------")
-    capitulo_5()
+    #capitulo_5()
+    print("---------Calculando resultados capitulo 6---------")
+    #capitulo_6()
+    print("---------Calculando resultados capitulo 7---------")
+    capitulo_7()
