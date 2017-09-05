@@ -1,0 +1,23 @@
+0 reactions initially
+0 metabolites initially
+0 genes initially
+1 reaction
+6 metabolites
+2 genes
+Reactions
+---------
+3OAS140 : ddcaACP_c + h_c + malACP_c --> 3omrsACP_c + ACP_c + co2_c
+
+Metabolites
+-----------
+    co2_c : CO2
+ malACP_c : C14H22N2O10PRS
+      h_c : H
+ddcaACP_c : C23H43N2O8PRS
+    ACP_c : C11H21N2O7PRS
+3omrsACP_c : C25H45N2O9PRS
+
+Genes
+-----
+STM2378 is associated with reactions: {3OAS140}
+STM1197 is associated with reactions: {3OAS140}
