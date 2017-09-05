@@ -183,6 +183,41 @@ def capitulo_3():
     cobra.io.write_sbml_model(
     textbook_model, "test_cobra.xml", use_fbc_package=False)
 
+def capitulo_4():
+    file = open("resultados_capitulo_4.txt","w")
+    model = cobra.test.create_test_model("textbook")
+    solution = model.optimize()
+    print(solution)
+    file.write(str(solution.objective_value)); file.write("\n")
+    file.write(str(model.optimize().objective_value)); file.write("\n")
+    file.write(str(model.slim_optimize())); file.write("\n")
+    file.write(str(model.summary())); file.write("\n")
+    file.write(str(model.metabolites.nadh_c.summary())); file.write("\n")
+    file.write(str(model.metabolites.atp_c.summary())); file.write("\n")
+    biomass_rxn = model.reactions.get_by_id("Biomass_Ecoli_core")
+    from cobra.util.solver import linear_reaction_coefficients
+    file.write(str(linear_reaction_coefficients(model))); file.write("\n")
+    model.objective = "ATPM"
+    model.reactions.get_by_id("ATPM").upper_bound = 1000.
+    file.write(str(linear_reaction_coefficients(model))); file.write("\n")
+    file.write(str(model.optimize().objective_value)); file.write("\n")
+    from cobra.flux_analysis import flux_variability_analysis
+    file.write(str(flux_variability_analysis(model, model.reactions[:10]))); file.write("\n")
+    file.write(str(cobra.flux_analysis.flux_variability_analysis(
+        model, model.reactions[:10], fraction_of_optimum=0.9)))
+    file.write("\n")
+    loop_reactions = [model.reactions.FRD7, model.reactions.SUCDi]
+    file.write(str(flux_variability_analysis(model, reaction_list=loop_reactions, loopless=False))); file.write("\n")
+    file.write(str(flux_variability_analysis(model, reaction_list=loop_reactions, loopless=True))); file.write("\n")
+    file.write(str(model.optimize())); file.write("\n")
+    file.write(str(model.summary(fva=0.95))); file.write("\n")
+    file.write(str(model.metabolites.pyr_c.summary(fva=0.95))); file.write("\n")
+    model.objective = 'Biomass_Ecoli_core'
+    fba_solution = model.optimize()
+    pfba_solution = cobra.flux_analysis.pfba(model)
+    file.write(str(abs(fba_solution.fluxes["Biomass_Ecoli_core"] - pfba_solution.fluxes[
+        "Biomass_Ecoli_core"])))
+    file.write("\n")
 
 if __name__ == '__main__':
     print("---------Calculando resultados capitulo 1---------")
@@ -190,4 +225,6 @@ if __name__ == '__main__':
     print("---------Calculando resultados capitulo 2---------")
     #capitulo_2()
     print("---------Calculando resultados capitulo 3---------")
-    capitulo_3()
+    #capitulo_3()
+    print("---------Calculando resultados capitulo 4---------")
+    capitulo_4()
