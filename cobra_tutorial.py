@@ -1,9 +1,11 @@
 # Tutorial cobra
 from __future__ import print_function
 from cobra import Model, Reaction, Metabolite
+from os.path import join
 
 import cobra
 import cobra.test
+import os
 
 def capitulo_1():
     file = open("resultados_capitulo_1.txt","w") 
@@ -166,8 +168,26 @@ def capitulo_2():
     model.objective = '3OAS140'
     file.close()
 
+def capitulo_3():
+    data_dir = cobra.test.data_dir
+
+    print("mini test files: ")
+    print(", ".join(i for i in os.listdir(data_dir) if i.startswith("mini")))
+
+    textbook_model = cobra.test.create_test_model("textbook")
+    ecoli_model = cobra.test.create_test_model("ecoli")
+    salmonella_model = cobra.test.create_test_model("salmonella")
+    cobra.io.read_sbml_model(join(data_dir, "mini_fbc2.xml"))
+    cobra.io.write_sbml_model(textbook_model, "test_fbc2.xml")
+    cobra.io.read_sbml_model(join(data_dir, "mini_cobra.xml"))
+    cobra.io.write_sbml_model(
+    textbook_model, "test_cobra.xml", use_fbc_package=False)
+
+
 if __name__ == '__main__':
     print("---------Calculando resultados capitulo 1---------")
     #capitulo_1()
     print("---------Calculando resultados capitulo 2---------")
-    capitulo_2()
+    #capitulo_2()
+    print("---------Calculando resultados capitulo 3---------")
+    capitulo_3()
