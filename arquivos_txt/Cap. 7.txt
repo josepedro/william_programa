@@ -1,0 +1,27 @@
+from cobra.test import create_test_model
+from cobra.flux_analysis import sample
+model = create_test_model("textbook")
+s = sample(model, 100)
+s.head()
+print("One process:")
+%time s = sample(model, 1000)
+print("Two processes:")
+%time s = sample(model, 1000, processes=2)
+s = sample(model, 100, method="achr")
+from cobra.flux_analysis.sampling import OptGPSampler, ACHRSampler
+achr = ACHRSampler(model, thinning=10)
+optgp = OptGPSampler(model, processes=4)
+s1 = achr.sample(100)
+s2 = optgp.sample(100)
+import numpy as np
+bad = np.random.uniform(-1000, 1000, size=len(model.reactions))
+achr.validate(np.atleast_2d(bad))
+achr.validate(s1)
+counts = [np.mean(s.Biomass_Ecoli_core > 0.1) for s in optgp.batch(100, 10)]
+print("Usually {:.2f}% +- {:.2f}% grow...".format(
+	np.mean(counts) * 100.0, np.std(counts) * 100.0))
+Usually 8.70% +- 2.72% grow...
+co = model.problem.Constraint(model.reactions.Biomass_Ecoli_core.flux_expression, lb=0.1)
+model.add_cons_vars([co])
+s = sample(model, 10)
+print(s.Biomass_Ecoli_core)

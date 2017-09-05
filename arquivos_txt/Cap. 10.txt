@@ -1,0 +1,5 @@
+import cobra.test
+model = cobra.test.create_test_model('textbook')
+model.solver = 'glpk'
+model.solver = 'cplex'
+type(model.solver)

@@ -1,0 +1,22 @@
+import cobra.test
+from cobra.flux_analysis import gapfill
+model = cobra.test.create_test_model("salmonella")
+universal = cobra.Model("universal_reactions")
+for i in [i.id for i in model.metabolites.f6p_c.reactions]:
+	reaction = model.reactions.get_by_id(i)
+	universal.add_reaction(reaction.copy())
+	model.remove_reactions([reaction])
+model.optimize().objective_value
+solution = gapfill(model, universal, demand_reactions=False)
+for reaction in solution[0]:
+	print(reaction.id)
+result = gapfill(model, universal, demand_reactions=False, iterations=4)
+for i, entries in enumerate(result):
+	print("---- Run %d ----" % (i + 1))
+	for e in entries:
+		print(e.id)
+with model:
+	model.objective = model.add_boundary(model.metabolites.f6p_c, type='demand')
+	solution = gapfill(model, universal)
+	for reaction in solution[0]:
+		print(reaction.id)

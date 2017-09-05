@@ -2,10 +2,15 @@
 from __future__ import print_function
 from cobra import Model, Reaction, Metabolite
 from os.path import join
+from time import time
+from cobra.flux_analysis import (
+    single_gene_deletion, single_reaction_deletion, double_gene_deletion,
+    double_reaction_deletion)
 
 import cobra
 import cobra.test
 import os
+import pandas
 
 def capitulo_1():
     file = open("resultados_capitulo_1.txt","w") 
@@ -218,6 +223,44 @@ def capitulo_4():
     file.write(str(abs(fba_solution.fluxes["Biomass_Ecoli_core"] - pfba_solution.fluxes[
         "Biomass_Ecoli_core"])))
     file.write("\n")
+    file.close()
+
+def capitulo_5():
+    file = open("resultados_capitulo_5.txt","w")
+    cobra_model = cobra.test.create_test_model("textbook")
+    ecoli_model = cobra.test.create_test_model("ecoli")
+    file.write(str(cobra_model.optimize())); file.write("\n")
+    with cobra_model:
+        cobra_model.reactions.PFK.knock_out()
+        file.write(str(cobra_model.optimize())); file.write("\n")
+    file.write(str(cobra_model.optimize())); file.write("\n")
+    with cobra_model:
+        cobra_model.genes.b1723.knock_out()
+        file.write(str(cobra_model.optimize())); file.write("\n")
+        cobra_model.genes.b3916.knock_out()
+        file.write(str(cobra_model.optimize())); file.write("\n")
+    deletion_results = single_gene_deletion(cobra_model)
+    single_gene_deletion(cobra_model, cobra_model.genes[:20])
+    single_reaction_deletion(cobra_model, cobra_model.reactions[:20])
+    double_gene_deletion(
+        cobra_model, cobra_model.genes[-5:], return_frame=True).round(4)
+    start = time() 
+    double_gene_deletion(
+        ecoli_model, ecoli_model.genes[:300], number_of_processes=2)
+    t1 = time() - start
+    file.write("Double gene deletions for 200 genes completed in " "%.2f sec with 2 cores" % t1); file.write("\n")
+    start = time() 
+    double_gene_deletion(
+        ecoli_model, ecoli_model.genes[:300], number_of_processes=1)
+    t2 = time() - start
+    file.write("Double gene deletions for 200 genes completed in " "%.2f sec with 1 core" % t2); file.write("\n")
+    file.write("Speedup of %.2fx" % (t2 / t1)); file.write("\n")
+    double_reaction_deletion(
+        cobra_model, cobra_model.reactions[2:7], return_frame=True).round(4)
+
+    file.close()
+
+
 
 if __name__ == '__main__':
     print("---------Calculando resultados capitulo 1---------")
@@ -227,4 +270,6 @@ if __name__ == '__main__':
     print("---------Calculando resultados capitulo 3---------")
     #capitulo_3()
     print("---------Calculando resultados capitulo 4---------")
-    capitulo_4()
+    #capitulo_4()
+    print("---------Calculando resultados capitulo 5---------")
+    capitulo_5()

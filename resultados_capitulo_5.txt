@@ -1,0 +1,6 @@
+<Solution 0.874 at 0x7f98d060d810>
+<Solution 0.704 at 0x7f98d060d850>
+<Solution 0.874 at 0x7f98d060d790>
+<Solution 0.874 at 0x7f98d060d7d0>
+<Solution 0.704 at 0x7f98d060d810>
+Double gene deletions for 200 genes completed in 47.21 sec with 2 cores

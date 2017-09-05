@@ -1,0 +1,47 @@
+import cobra.test
+model = cobra.test.create_test_model('textbook')
+same_flux = model.problem.Constraint(
+	model.reactions.FBA.flux_expression - model.reactions.NH4t.flux_expression,
+	lb=0,
+	ub=0)
+model.add_cons_vars(same_flux)
+model.reactions.FBA.flux_expression
+solution = model.optimize()
+print(solution.fluxes['FBA'], solution.fluxes['NH4t'],
+	solution.objective_value)
+model = cobra.test.create_test_model('textbook')
+with model:
+	model.objective = {model.reactions.Biomass_Ecoli_core: 1}
+	model.optimize()
+	print(model.reactions.Biomass_Ecoli_core.flux)
+model.objective.expression
+%matplotlib inline
+import plot_helper
+plot_helper.plot_qp2()
+model.solver = 'cplex'
+sum_two = model.problem.Constraint(
+	model.reactions.FBA.flux_expression + model.reactions.NH4t.flux_expression,
+	lb=2,
+	ub=2)
+model.add_cons_vars(sum_two)
+quadratic_objective = model.problem.Objective(
+	0.5 * model.reactions.NH4t.flux_expression**2 + 0.5 *
+	model.reactions.FBA.flux_expression**2 -
+	model.reactions.FBA.flux_expression,
+	direction='min')
+model.objective = quadratic_objective
+solution = model.optimize(objective_sense=None)
+print(solution.fluxes['NH4t'], solution.fluxes['FBA'])
+model = cobra.test.create_test_model('textbook')
+difference = model.problem.Variable('difference')
+constraint = model.problem.Constraint(
+	model.reactions.EX_glc__D_e.flux_expression -
+	model.reactions.EX_nh4_e.flux_expression - difference,
+	lb=0,
+	ub=0)
+model.add_cons_vars([difference, constraint])
+for reaction in model.reactions[:5]:
+	with model:
+		reaction.knock_out()
+		model.optimize()
+print(model.solver.variables.difference.primal)

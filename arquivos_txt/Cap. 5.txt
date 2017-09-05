@@ -1,0 +1,39 @@
+import pandas
+from time import time
+import cobra.test
+from cobra.flux_analysis import (
+	single_gene_deletion, single_reaction_deletion, double_gene_deletion,
+	double_reaction_deletion)
+cobra_model = cobra.test.create_test_model("textbook")
+ecoli_model = cobra.test.create_test_model("ecoli")
+print('complete model: ', cobra_model.optimize())
+with cobra_model:
+	cobra_model.reactions.PFK.knock_out()
+	print('pfk knocked out: ', cobra_model.optimize())
+print('complete model: ', cobra_model.optimize())
+with cobra_model:
+	cobra_model.genes.b1723.knock_out()
+	print('pfkA knocked out: ', cobra_model.optimize())
+	cobra_model.genes.b3916.knock_out()
+	print('pfkB knocked out: ', cobra_model.optimize())
+deletion_results = single_gene_deletion(cobra_model)
+single_gene_deletion(cobra_model, cobra_model.genes[:20])
+single_reaction_deletion(cobra_model, cobra_model.reactions[:20])
+double_gene_deletion(
+	cobra_model, cobra_model.genes[-5:], return_frame=True).round(4)
+start = time() 
+double_gene_deletion(
+	ecoli_model, ecoli_model.genes[:300], number_of_processes=2)
+t1 = time() - start
+print("Double gene deletions for 200 genes completed in "
+	"%.2f sec with 2 cores" % t1)
+start = time() 
+double_gene_deletion(
+	ecoli_model, ecoli_model.genes[:300], number_of_processes=1)
+t2 = time() - start
+print("Double gene deletions for 200 genes completed in "
+	"%.2f sec with 1 core" % t2)
+print("Speedup of %.2fx" % (t2 / t1))
+double_reaction_deletion(
+	cobra_model, cobra_model.reactions[2:7], return_frame=True).round(4)
+

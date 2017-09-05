@@ -1,0 +1,11 @@
+import cobra.test
+from cobra.flux_analysis import production_envelope
+model = cobra.test.create_test_model("textbook")
+prod_env = production_envelope(model, ["EX_glc__D_e", "EX_o2_e"])
+prod_env.head()
+prod_env = production_envelope(
+	model, ["EX_o2_e"], objective="EX_ac_e", c_source="EX_glc__D_e")
+prod_env.head()
+%matplotlib inline
+prod_env[prod_env.direction == 'maximum'].plot(
+	kind='line', x='EX_o2_e', y='carbon_yield')
