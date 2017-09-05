@@ -1,0 +1,4 @@
+model = cobra.test.create_test_model("textbook")
+print(len(model.reactions))
+print(len(model.metabolites))
+print(len(model.genes))

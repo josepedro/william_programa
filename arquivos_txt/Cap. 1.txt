@@ -1,0 +1,75 @@
+from __future__ import print_function
+import cobra
+import cobra.test
+model = cobra.test.create_test_model("textbook")
+print(len(model.reactions))
+print(len(model.metabolites))
+print(len(model.genes))
+model
+model.reactions[29]
+model.metabolites.get_by_id("atp_c")
+model.reactions.EX_glc__D_e.bounds
+pgi = model.reactions.get_by_id("PGI")
+pgi
+print(pgi.name)
+print(pgi.reaction)
+print(pgi.lower_bound, "< pgi <", pgi.upper_bound)
+print(pgi.reversibility)
+pgi.check_mass_balance()
+pgi.add_metabolites({model.metabolites.get_by_id("h_c"): -1})
+pgi.reaction
+pgi.check_mass_balance()
+pgi.subtract_metabolites({model.metabolites.get_by_id("h_c"): -1})
+print(pgi.reaction)
+print(pgi.check_mass_balance())
+pgi.reaction = "g6p_c --> f6p_c + h_c + green_eggs + ham"
+unknown metabolite 'green_eggs' created
+unknown metabolite 'ham' created
+pgi.reaction
+pgi.reaction = "g6p_c <=> f6p_c"
+pgi.reaction
+atp = model.metabolites.get_by_id("atp_c")
+atp
+print(atp.name)
+print(atp.compartment)
+atp.charge
+print(atp.formula)
+len(atp.reactions)
+model.metabolites.get_by_id("g6p_c").reactions
+gpr = pgi.gene_reaction_rule
+gpr
+pgi.genes
+pgi_gene = model.genes.get_by_id("b4025")
+pgi_gene
+pgi_gene.reactions
+pgi.gene_reaction_rule = "(spam or eggs)"
+pgi.genes
+pgi_gene.reactions
+model.genes.get_by_id("spam")
+cobra.manipulation.delete_model_genes(
+	model, ["spam"], cumulative_deletions=True)
+print("after 1 KO: %4d < flux_PGI < %4d" % (pgi.lower_bound, pgi.upper_bound))
+cobra.manipulation.delete_model_genes(
+	model, ["eggs"], cumulative_deletions=True)
+print("after 2 KO: %4d < flux_PGI < %4d" % (pgi.lower_bound, pgi.upper_bound))
+cobra.manipulation.undelete_model_genes(model)
+	print(pgi.lower_bound, "< pgi <", pgi.upper_bound)
+model = cobra.test.create_test_model('textbook')
+for reaction in model.reactions[:5]:
+	with model as model:
+		reaction.knock_out()
+		model.optimize()
+		print('%s blocked (bounds: %s), new growth rate %f' %
+			(reaction.id, str(reaction.bounds), model.objective.value))
+[reaction.bounds for reaction in model.reactions[:5]]
+print('original objective: ', model.objective.expression)
+with model:
+	model.objective = 'ATPM'
+	print('print objective in first context:', model.objective.expression)
+	with model:
+		model.objective = 'ACALD'
+		print('print objective in second context:', model.objective.expression)
+	print('objective after exiting second context:',
+		model.objective.expression)
+with model as inner:
+print('back to original objective:', model.objective.expression)

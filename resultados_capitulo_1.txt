@@ -1,0 +1,17 @@
+95
+72
+137
+glucose-6-phosphate isomerase
+g6p_c <=> f6p_c
+-1000.0< pgi <1000.0
+g6p_c <=> f6p_c
+ATP
+c
+C10H12N5O13P3
+after 1 KO: -1000 < flux_PGI < 1000
+after 2 KO:    0 < flux_PGI <    0
+ACALD blocked (bounds: (0, 0)), new growth rate 0.873922
+ACALDt blocked (bounds: (0, 0)), new growth rate 0.873922
+ACKr blocked (bounds: (0, 0)), new growth rate 0.873922
+ACONTa blocked (bounds: (0, 0)), new growth rate -0.000000
+ACONTb blocked (bounds: (0, 0)), new growth rate -0.000000
